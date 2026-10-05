@@ -94,4 +94,30 @@ public class CarsController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = "Manager,Admin")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteCar(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        await _carCatalogService.DeleteCarAsync(id, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/restore")]
+    [Authorize(Roles = "Manager,Admin")]
+    [ProducesResponseType(typeof(CarDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RestoreCar(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        CarDto car = await _carCatalogService.RestoreCarAsync(id, cancellationToken);
+        return Ok(car);
+    }
 }

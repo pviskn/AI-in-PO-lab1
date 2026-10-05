@@ -135,6 +135,71 @@ public class CarTests
         act.Should().Throw<InvalidOperationException>();
     }
 
+    [Fact]
+    public void Car_ShouldNotBeDeleted_WhenCreated()
+    {
+        Car car = CreateCar();
+
+        car.IsDeleted.Should().BeFalse();
+        car.DeletedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public void Car_ShouldBeMarkedDeleted_WhenSoftDeleted()
+    {
+        Car car = CreateCar();
+
+        car.SoftDelete();
+
+        car.IsDeleted.Should().BeTrue();
+        car.DeletedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Car_ShouldThrow_WhenSoftDeletingAlreadyDeletedCar()
+    {
+        Car car = CreateCar();
+        car.SoftDelete();
+
+        Action act = () => car.SoftDelete();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void Car_ShouldThrow_WhenSoftDeletingRentedCar()
+    {
+        Car car = CreateCar();
+        car.Rent();
+
+        Action act = () => car.SoftDelete();
+
+        act.Should().Throw<InvalidOperationException>();
+        car.IsDeleted.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Car_ShouldNotBeDeleted_WhenRestoredAfterSoftDelete()
+    {
+        Car car = CreateCar();
+        car.SoftDelete();
+
+        car.Restore();
+
+        car.IsDeleted.Should().BeFalse();
+        car.DeletedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public void Car_ShouldThrow_WhenRestoringNotDeletedCar()
+    {
+        Car car = CreateCar();
+
+        Action act = () => car.Restore();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
     private static Car CreateCar(string? vin = null, CarCategory category = CarCategory.Economy)
     {
         return new Car(Guid.NewGuid(), vin ?? ValidVin, "Toyota", "Camry", 2020, category, 50m, 10_000);

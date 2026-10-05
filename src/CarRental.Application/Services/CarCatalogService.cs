@@ -88,4 +88,30 @@ public class CarCatalogService : ICarCatalogService
         _carRepo.Update(car);
         await _uow.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task DeleteCarAsync(Guid carId, CancellationToken cancellationToken = default)
+    {
+        Car? car = await _carRepo.GetByIdIncludingDeletedAsync(carId, cancellationToken);
+        if (car == null)
+            throw new KeyNotFoundException("Автомобиль не найден");
+
+        car.SoftDelete();
+
+        _carRepo.Update(car);
+        await _uow.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<CarDto> RestoreCarAsync(Guid carId, CancellationToken cancellationToken = default)
+    {
+        Car? car = await _carRepo.GetByIdIncludingDeletedAsync(carId, cancellationToken);
+        if (car == null)
+            throw new KeyNotFoundException("Автомобиль не найден");
+
+        car.Restore();
+
+        _carRepo.Update(car);
+        await _uow.SaveChangesAsync(cancellationToken);
+
+        return car.ToDto();
+    }
 }

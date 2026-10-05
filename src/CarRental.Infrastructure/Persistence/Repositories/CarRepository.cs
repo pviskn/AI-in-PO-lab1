@@ -16,6 +16,11 @@ public class CarRepository : ICarRepository
 
     public Task<Car?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        return _context.Cars.FirstOrDefaultAsync(car => car.Id == id && car.DeletedAt == null, cancellationToken);
+    }
+
+    public Task<Car?> GetByIdIncludingDeletedAsync(Guid id, CancellationToken cancellationToken = default)
+    {
         return _context.Cars.FirstOrDefaultAsync(car => car.Id == id, cancellationToken);
     }
 
@@ -33,7 +38,7 @@ public class CarRepository : ICarRepository
         int pageSize,
         CancellationToken cancellationToken = default)
     {
-        IQueryable<Car> query = _context.Cars;
+        IQueryable<Car> query = _context.Cars.Where(c => c.DeletedAt == null);
 
         if (status.HasValue)
             query = query.Where(c => c.Status == status.Value);

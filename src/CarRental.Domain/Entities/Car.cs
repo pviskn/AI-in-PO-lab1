@@ -26,6 +26,10 @@ public class Car
 
     public int Mileage { get; private set; }
 
+    public DateTime? DeletedAt { get; private set; }
+
+    public bool IsDeleted => DeletedAt.HasValue;
+
     private readonly List<RentalRequest> _rentalRequests = new();
 
     public IReadOnlyCollection<RentalRequest> RentalRequests => _rentalRequests.AsReadOnly();
@@ -92,5 +96,24 @@ public class Car
             throw new InvalidOperationException("автомобиль не на обслуживании");
 
         Status = CarStatus.Available;
+    }
+
+    public void SoftDelete()
+    {
+        if (IsDeleted)
+            throw new InvalidOperationException("Автомобиль уже удалён");
+
+        if (Status == CarStatus.Rented)
+            throw new InvalidOperationException("Нельзя удалить автомобиль, находящийся в аренде");
+
+        DeletedAt = DateTime.UtcNow;
+    }
+
+    public void Restore()
+    {
+        if (!IsDeleted)
+            throw new InvalidOperationException("Автомобиль не удалён");
+
+        DeletedAt = null;
     }
 }
