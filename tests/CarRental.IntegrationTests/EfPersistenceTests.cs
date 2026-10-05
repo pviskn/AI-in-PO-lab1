@@ -1,6 +1,7 @@
 using CarRental.Domain.Entities;
 using CarRental.Domain.Enums;
 using CarRental.Infrastructure.Persistence;
+using CarRental.Infrastructure.Persistence.Repositories;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
@@ -341,6 +342,66 @@ public class EfPersistenceTests
             loaded.LateFee.Should().Be(450m);
             loaded.DamageFee.Should().Be(100m);
             loaded.TotalPrice.Should().Be(1300m);
+        }
+    }
+
+
+    [Fact]
+    public async Task Car_SoftDelete_KeepsRowAndPersistsDeletedAt()
+    {
+        var id        = Guid.NewGuid();
+        var deletedAt = new DateTime(2025, 2, 1, 9, 30, 0, DateTimeKind.Utc);
+        var car       = new Car(id, "1HGCM82633A004352", "Toyota", "Camry", 2022,
+            CarCategory.Economy, 70m, 15_000);
+
+        await using (var ctx = CreateContext(nameof(Car_SoftDelete_KeepsRowAndPersistsDeletedAt)))
+        {
+            ctx.Cars.Add(car);
+            await ctx.SaveChangesAsync();
+
+            car.SoftDelete(deletedAt);
+            await ctx.SaveChangesAsync();
+        }
+
+        await using (var ctx = CreateContext(nameof(Car_SoftDelete_KeepsRowAndPersistsDeletedAt)))
+        {
+            var loaded = await ctx.Cars.FindAsync(id);
+
+            loaded.Should().NotBeNull();
+            loaded!.DeletedAt.Should().Be(deletedAt);
+            loaded.IsDeleted.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public async Task CarRepository_HidesSoftDeletedCars_FromRegularQueries()
+    {
+        var activeCar  = new Car(Guid.NewGuid(), "1HGCM82633A004352", "Toyota", "Camry", 2022,
+            CarCategory.Economy, 70m, 15_000);
+        var deletedCar = new Car(Guid.NewGuid(), "JH4KA7650MC002594", "Honda", "Civic", 2021,
+            CarCategory.Economy, 80m, 20_000);
+        deletedCar.SoftDelete(DateTime.UtcNow);
+
+        await using (var ctx = CreateContext(nameof(CarRepository_HidesSoftDeletedCars_FromRegularQueries)))
+        {
+            ctx.Cars.AddRange(activeCar, deletedCar);
+            await ctx.SaveChangesAsync();
+        }
+
+        await using (var ctx = CreateContext(nameof(CarRepository_HidesSoftDeletedCars_FromRegularQueries)))
+        {
+            var repo = new CarRepository(ctx);
+
+            (await repo.GetByIdAsync(activeCar.Id)).Should().NotBeNull();
+            (await repo.GetByIdAsync(deletedCar.Id)).Should().BeNull();
+            (await repo.GetByVinAsync("JH4KA7650MC002594")).Should().BeNull();
+            (await repo.GetByIdIncludingDeletedAsync(deletedCar.Id)).Should().NotBeNull();
+
+            var (items, totalCount) = await repo.GetPagedAsync(null, null, null, null, 1, 20);
+            items.Should().ContainSingle(c => c.Id == activeCar.Id);
+            totalCount.Should().Be(1);
+
+            (await repo.ExistsByVinAsync("JH4KA7650MC002594")).Should().BeTrue();
         }
     }
 }

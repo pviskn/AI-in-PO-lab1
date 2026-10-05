@@ -37,6 +37,26 @@ public class RentalRequestsControllerTests : TestBase
     }
 
     [Fact]
+    public async Task CreateRequest_Returns404_WhenCarIsSoftDeleted()
+    {
+        var managerToken = await CreateManagerAndGetTokenAsync("mgr_create_req_deleted");
+        SetAuthToken(managerToken);
+        var car = await (await Client.PostAsJsonAsync("/api/cars", ValidCreateCarDto("1HGCM82633A004352")))
+            .Content.ReadFromJsonAsync<CarDto>();
+        await Client.DeleteAsync($"/api/cars/{car!.Id}");
+        ClearAuthToken();
+
+        var clientToken = await RegisterAndGetTokenAsync("client_create_req_deleted");
+        SetAuthToken(clientToken);
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var dto = new CreateRentalRequestDto(car.Id, today.AddDays(1), today.AddDays(4));
+
+        var response = await Client.PostAsJsonAsync("/api/rental-requests", dto);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task CreateRequest_Returns409_WhenPeriodOverlaps()
     {
         var managerToken = await CreateManagerAndGetTokenAsync("mgr_overlap");

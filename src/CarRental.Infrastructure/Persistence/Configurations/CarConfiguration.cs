@@ -46,6 +46,10 @@ public class CarConfiguration : IEntityTypeConfiguration<Car>
         builder.Property(c => c.Mileage)
             .IsRequired();
 
+        builder.Property(c => c.DeletedAt);
+
+        builder.Ignore(c => c.IsDeleted);
+
         builder.HasMany(c => c.RentalRequests)
                .WithOne(r => r.Car)
                .HasForeignKey(r => r.CarId);
