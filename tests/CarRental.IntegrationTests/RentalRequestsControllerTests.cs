@@ -98,6 +98,41 @@ public class RentalRequestsControllerTests : TestBase
 
 
     [Fact]
+    public async Task CreateRequest_Returns404_WhenCarIsDeleted()
+    {
+        var managerToken = await CreateManagerAndGetTokenAsync("mgr_req_deleted_car");
+        SetAuthToken(managerToken);
+        var car = await (await Client.PostAsJsonAsync("/api/cars", ValidCreateCarDto("1HGCM82633A004352")))
+            .Content.ReadFromJsonAsync<CarDto>();
+        await Client.DeleteAsync($"/api/cars/{car!.Id}");
+        ClearAuthToken();
+
+        SetAuthToken(await RegisterAndGetTokenAsync("client_req_deleted_car"));
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var response = await Client.PostAsJsonAsync("/api/rental-requests",
+            new CreateRentalRequestDto(car.Id, today.AddDays(1), today.AddDays(4)));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task ApproveRequest_Returns400_WhenCarWasDeletedAfterRequest()
+    {
+        var (requestId, managerToken) = await CreatePendingRequestAsync(
+            "mgr_approve_deleted", "client_approve_deleted", "3VWFE21C04M000001");
+
+        SetAuthToken(managerToken);
+        var requests = await (await Client.GetAsync("/api/rental-requests"))
+            .Content.ReadFromJsonAsync<PagedResult<RentalRequestDto>>();
+        var carId = requests!.Items.Single(r => r.Id == requestId).CarId;
+        await Client.DeleteAsync($"/api/cars/{carId}");
+
+        var response = await Client.PostAsJsonAsync($"/api/rental-requests/{requestId}/approve", new { });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task RejectRequest_Returns204_WhenRequestIsPending()
     {
         var (requestId, managerToken) = await CreatePendingRequestAsync(

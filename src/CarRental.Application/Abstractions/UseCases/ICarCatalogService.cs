@@ -13,4 +13,8 @@ public interface ICarCatalogService
     Task<CarDto> AddCarAsync(CreateCarDto dto, CancellationToken cancellationToken = default);
 
     Task ChangeCarStatusAsync(Guid carId, CarStatus newStatus, CancellationToken cancellationToken = default);
+
+    Task SoftDeleteCarAsync(Guid carId, CancellationToken cancellationToken = default);
+
+    Task RestoreCarAsync(Guid carId, CancellationToken cancellationToken = default);
 }

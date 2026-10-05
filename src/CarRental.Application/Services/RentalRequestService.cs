@@ -103,6 +103,9 @@ public class RentalRequestService : IRentalRequestService
         if (request.Status != RentalRequestStatus.Pending)
             throw new InvalidOperationException("Заявка не находится в статусе ожидания");
 
+        if (request.Car.IsDeleted)
+            throw new InvalidOperationException("Автомобиль удалён");
+
         decimal basePrice = _pricing.CalculateBasePrice(request.Car, request.StartDate, request.EndDate);
 
         var contract = new RentalContract(

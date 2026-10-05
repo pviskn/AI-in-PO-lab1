@@ -135,6 +135,86 @@ public class CarTests
         act.Should().Throw<InvalidOperationException>();
     }
 
+    [Fact]
+    public void Car_ShouldNotBeDeleted_WhenCreated()
+    {
+        Car car = CreateCar();
+
+        car.IsDeleted.Should().BeFalse();
+        car.DeletedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public void Car_ShouldBeMarkedDeleted_WhenSoftDeleted()
+    {
+        Car car = CreateCar();
+        var deletedAt = new DateTime(2025, 1, 15, 10, 0, 0, DateTimeKind.Utc);
+
+        car.SoftDelete(deletedAt);
+
+        car.IsDeleted.Should().BeTrue();
+        car.DeletedAt.Should().Be(deletedAt);
+    }
+
+    [Fact]
+    public void Car_ShouldThrow_WhenSoftDeletingAlreadyDeletedCar()
+    {
+        Car car = CreateCar();
+        var deletedAt = new DateTime(2025, 1, 15, 10, 0, 0, DateTimeKind.Utc);
+        car.SoftDelete(deletedAt);
+
+        Action act = () => car.SoftDelete(deletedAt.AddHours(1));
+
+        act.Should().Throw<InvalidOperationException>();
+        car.DeletedAt.Should().Be(deletedAt);
+    }
+
+    [Fact]
+    public void Car_ShouldClearDeletion_WhenRestored()
+    {
+        Car car = CreateCar();
+        car.SoftDelete(DateTime.UtcNow);
+
+        car.Restore();
+
+        car.IsDeleted.Should().BeFalse();
+        car.DeletedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public void Car_ShouldThrow_WhenRestoringCarThatIsNotDeleted()
+    {
+        Car car = CreateCar();
+
+        Action act = () => car.Restore();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void Car_ShouldKeepStatus_WhenSoftDeletedAndRestored()
+    {
+        Car car = CreateCar();
+        car.SendToMaintenance();
+
+        car.SoftDelete(DateTime.UtcNow);
+        car.Restore();
+
+        car.Status.Should().Be(CarStatus.UnderMaintenance);
+    }
+
+    [Fact]
+    public void Car_ShouldThrow_WhenRentCalledOnDeletedCar()
+    {
+        Car car = CreateCar();
+        car.SoftDelete(DateTime.UtcNow);
+
+        Action act = () => car.Rent();
+
+        act.Should().Throw<CarNotAvailableException>();
+        car.Status.Should().Be(CarStatus.Available);
+    }
+
     private static Car CreateCar(string? vin = null, CarCategory category = CarCategory.Economy)
     {
         return new Car(Guid.NewGuid(), vin ?? ValidVin, "Toyota", "Camry", 2020, category, 50m, 10_000);

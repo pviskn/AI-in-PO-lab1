@@ -76,6 +76,13 @@ PENDING → APPROVED → COMPLETED
 | GET    | /api/cars/{id}             | Все               |
 | POST   | /api/cars                  | MANAGER, ADMIN    |
 | PATCH  | /api/cars/{id}/status      | MANAGER, ADMIN    |
+| DELETE | /api/cars/{id}             | MANAGER, ADMIN    |
+| POST   | /api/cars/{id}/restore     | MANAGER, ADMIN    |
+
+Удаление автомобиля мягкое: запись остаётся в БД, а в поле `DeletedAt` записывается время удаления.
+Удалённые автомобили не попадают в список `GET /api/cars`, а `GET /api/cars/{id}` для них возвращает 404.
+Повторное удаление уже удалённого автомобиля и восстановление неудалённого возвращают 400.
+VIN удалённого автомобиля остаётся занятым, поэтому повторно добавить автомобиль с тем же VIN нельзя — его нужно восстановить.
 
 ### Заявки на аренду
 | Метод  | URL                                | Роль           |
