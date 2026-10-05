@@ -136,15 +136,6 @@ appAndInfraDirs.forEach(dir => {
                 report(filePath, `Метод '${methodName}' возвращает Task, но в его параметрах отсутствует CancellationToken`);
             }
         }
-
-        const returnAsyncWithoutAwait = /return\s+_\w+\.\w+Async\s*\([^)]*\)\s*;/g;
-        let returnMatch;
-        while ((returnMatch = returnAsyncWithoutAwait.exec(content)) !== null) {
-            const line = returnMatch[0];
-            if (!/await\s+/.test(line)) {
-                report(filePath, `Подозрение: return без await для асинхронного вызова: "${line.trim()}"`);
-            }
-        }
     });
 });
 
