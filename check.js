@@ -161,7 +161,6 @@ walkDir(path.join(SRC_DIR, 'CarRental.Application'), (filePath, rawContent) => {
 
 walkDir(SRC_DIR, (filePath, rawContent) => {
     const content = stripComments(rawContent);
-    // ИСПРАВЛЕНО: экранирована скобка
     if (/throw new Exception\s*\(/.test(content)) {
         report(filePath, 'Запрещено использование throw new Exception(...) для бизнес-логики. Используйте кастомные исключения');
     }
@@ -195,7 +194,6 @@ walkDir(path.join(TESTS_DIR, 'CarRental.UnitTests'), (filePath, rawContent) => {
     }
 });
 
-console.log('--------------------------------------------------');
 if (violationsCount > 0) {
     console.log(`НАРУШЕНИЯ КОНВЕНЦИЙ НАЙДЕНЫ: ${violationsCount}\n`);
     violationsLog.forEach(log => console.log(log));
