@@ -86,6 +86,8 @@ PENDING → APPROVED → COMPLETED
 | POST   | /api/rental-requests/{id}/reject   | MANAGER, ADMIN |
 | POST   | /api/rental-requests/{id}/complete | MANAGER, ADMIN |
 
+`GET /api/rental-requests` принимает query-параметры `page` (по умолчанию 1, минимум 1), `pageSize` (по умолчанию 20, от 1 до 100) и необязательный `status` (`Pending`, `Approved`, `Rejected`, `Completed`). Возвращает `PagedResult<RentalRequestDto>`. CLIENT видит только свои заявки, MANAGER и ADMIN — все.
+
 ### Пользователи
 | Метод  | URL                       | Роль  |
 |--------|---------------------------|-------|
