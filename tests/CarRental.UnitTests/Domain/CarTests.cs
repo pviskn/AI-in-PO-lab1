@@ -135,6 +135,74 @@ public class CarTests
         act.Should().Throw<InvalidOperationException>();
     }
 
+    [Fact]
+    public void Car_ShouldNotBeDeleted_WhenCreated()
+    {
+        Car car = CreateCar();
+
+        car.IsDeleted.Should().BeFalse();
+        car.DeletedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public void MarkAsDeleted_ShouldSetDeletedAt()
+    {
+        Car car = CreateCar();
+        var deletedAt = new DateTime(2026, 5, 1, 12, 0, 0, DateTimeKind.Utc);
+
+        car.MarkAsDeleted(deletedAt);
+
+        car.IsDeleted.Should().BeTrue();
+        car.DeletedAt.Should().Be(deletedAt);
+    }
+
+    [Fact]
+    public void MarkAsDeleted_ShouldThrow_WhenCarIsAlreadyDeleted()
+    {
+        Car car = CreateCar();
+        var deletedAt = new DateTime(2026, 5, 1, 12, 0, 0, DateTimeKind.Utc);
+        car.MarkAsDeleted(deletedAt);
+
+        Action act = () => car.MarkAsDeleted(deletedAt.AddDays(1));
+
+        act.Should().Throw<InvalidOperationException>();
+        car.DeletedAt.Should().Be(deletedAt);
+    }
+
+    [Fact]
+    public void Restore_ShouldClearDeletedAt()
+    {
+        Car car = CreateCar();
+        car.MarkAsDeleted(DateTime.UtcNow);
+
+        car.Restore();
+
+        car.IsDeleted.Should().BeFalse();
+        car.DeletedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public void Restore_ShouldThrow_WhenCarIsNotDeleted()
+    {
+        Car car = CreateCar();
+
+        Action act = () => car.Restore();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void Rent_ShouldThrow_WhenCarIsDeleted()
+    {
+        Car car = CreateCar();
+        car.MarkAsDeleted(DateTime.UtcNow);
+
+        Action act = () => car.Rent();
+
+        act.Should().Throw<CarNotAvailableException>();
+        car.Status.Should().Be(CarStatus.Available);
+    }
+
     private static Car CreateCar(string? vin = null, CarCategory category = CarCategory.Economy)
     {
         return new Car(Guid.NewGuid(), vin ?? ValidVin, "Toyota", "Camry", 2020, category, 50m, 10_000);

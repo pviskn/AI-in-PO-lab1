@@ -76,6 +76,8 @@ PENDING → APPROVED → COMPLETED
 | GET    | /api/cars/{id}             | Все               |
 | POST   | /api/cars                  | MANAGER, ADMIN    |
 | PATCH  | /api/cars/{id}/status      | MANAGER, ADMIN    |
+| DELETE | /api/cars/{id}             | MANAGER, ADMIN    |
+| POST   | /api/cars/{id}/restore     | MANAGER, ADMIN    |
 
 ### Заявки на аренду
 | Метод  | URL                                | Роль           |

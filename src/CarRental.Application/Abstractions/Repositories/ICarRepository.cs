@@ -7,6 +7,8 @@ public interface ICarRepository
 {
     Task<Car?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
 
+    Task<Car?> GetByIdIncludingDeletedAsync(Guid id, CancellationToken cancellationToken = default);
+
     Task<Car?> GetByVinAsync(string vin, CancellationToken cancellationToken = default);
 
     Task<(IReadOnlyList<Car> Items, int TotalCount)> GetPagedAsync(
