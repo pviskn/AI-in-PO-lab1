@@ -1,4 +1,5 @@
 using CarRental.Application.Abstractions.Repositories;
+using CarRental.Application.Abstractions.Services;
 using CarRental.Application.Abstractions.UseCases;
 using CarRental.Application.Common;
 using CarRental.Application.DTOs;
@@ -15,10 +16,13 @@ public class CarCatalogService : ICarCatalogService
 
     private readonly IUnitOfWork _uow;
 
-    public CarCatalogService(ICarRepository carRepo, IUnitOfWork uow)
+    private readonly IDateTimeProvider _dateTime;
+
+    public CarCatalogService(ICarRepository carRepo, IUnitOfWork uow, IDateTimeProvider dateTime)
     {
         _carRepo = carRepo;
         _uow = uow;
+        _dateTime = dateTime;
     }
 
     public async Task<PagedResult<CarDto>> GetCarsAsync(CarFilterDto filter, CancellationToken cancellationToken = default)
@@ -87,5 +91,29 @@ public class CarCatalogService : ICarCatalogService
 
         _carRepo.Update(car);
         await _uow.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task DeleteCarAsync(Guid carId, CancellationToken cancellationToken = default)
+    {
+        Car car = await _carRepo.GetByIdIncludingDeletedAsync(carId, cancellationToken)
+            ?? throw new KeyNotFoundException("автомобиль не найден");
+
+        car.SoftDelete(_dateTime.UtcNow);
+
+        _carRepo.Update(car);
+        await _uow.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<CarDto> RestoreCarAsync(Guid carId, CancellationToken cancellationToken = default)
+    {
+        Car car = await _carRepo.GetByIdIncludingDeletedAsync(carId, cancellationToken)
+            ?? throw new KeyNotFoundException("автомобиль не найден");
+
+        car.Restore();
+
+        _carRepo.Update(car);
+        await _uow.SaveChangesAsync(cancellationToken);
+
+        return car.ToDto();
     }
 }

@@ -3,8 +3,11 @@ using System.Net.Http.Json;
 using CarRental.Application.Common;
 using CarRental.Application.DTOs;
 using CarRental.Domain.Enums;
+using CarRental.Infrastructure.Persistence;
 using CarRental.IntegrationTests.Infrastructure;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace CarRental.IntegrationTests;
@@ -169,9 +172,190 @@ public class CarsControllerTests : TestBase
     }
 
 
+    [Fact]
+    public async Task DeleteCar_Returns204_AndHidesCarFromListAndById()
+    {
+        var managerToken = await CreateManagerAndGetTokenAsync("mgr_delete");
+        SetAuthToken(managerToken);
+        var deleted = await CreateCarAsync("1HGCM82633A004352");
+        var kept = await CreateCarAsync("JH4KA7650MC002594");
+
+        var response = await Client.DeleteAsync($"/api/cars/{deleted.Id}");
+        ClearAuthToken();
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var list = await (await Client.GetAsync("/api/cars")).Content.ReadFromJsonAsync<PagedResult<CarDto>>();
+        list!.Items.Select(c => c.Id).Should().ContainSingle().Which.Should().Be(kept.Id);
+        list.TotalCount.Should().Be(1);
+
+        var byId = await Client.GetAsync($"/api/cars/{deleted.Id}");
+        byId.StatusCode.Should().Be(HttpStatusCode.NotFound);
+
+        var keptById = await Client.GetAsync($"/api/cars/{kept.Id}");
+        keptById.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task DeleteCar_KeepsRowInDatabase()
+    {
+        var managerToken = await CreateManagerAndGetTokenAsync("mgr_delete_row");
+        SetAuthToken(managerToken);
+        var car = await CreateCarAsync("1HGCM82633A004352");
+
+        await Client.DeleteAsync($"/api/cars/{car.Id}");
+
+        await using var scope = Factory.Services.CreateAsyncScope();
+        var ctx = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var entity = await ctx.Cars.AsNoTracking().SingleOrDefaultAsync(c => c.Id == car.Id);
+        entity.Should().NotBeNull();
+        entity!.DeletedAt.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task DeleteCar_Returns204_WhenAdminDeletes()
+    {
+        var adminToken = await CreateAdminAndGetTokenAsync("admin_delete");
+        SetAuthToken(adminToken);
+        var car = await CreateCarAsync("1HGCM82633A004352");
+
+        var response = await Client.DeleteAsync($"/api/cars/{car.Id}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task DeleteCar_Returns409_WhenCarAlreadyDeleted()
+    {
+        var managerToken = await CreateManagerAndGetTokenAsync("mgr_delete_twice");
+        SetAuthToken(managerToken);
+        var car = await CreateCarAsync("1HGCM82633A004352");
+        await Client.DeleteAsync($"/api/cars/{car.Id}");
+
+        var response = await Client.DeleteAsync($"/api/cars/{car.Id}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task DeleteCar_Returns404_WhenCarDoesNotExist()
+    {
+        var managerToken = await CreateManagerAndGetTokenAsync("mgr_delete_404");
+        SetAuthToken(managerToken);
+
+        var response = await Client.DeleteAsync($"/api/cars/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task DeleteCar_Returns401_WhenNotAuthenticated()
+    {
+        var response = await Client.DeleteAsync($"/api/cars/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task DeleteCar_Returns403_WhenUserIsClient()
+    {
+        var clientToken = await RegisterAndGetTokenAsync("client_delete");
+        SetAuthToken(clientToken);
+
+        var response = await Client.DeleteAsync($"/api/cars/{Guid.NewGuid()}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task ChangeCarStatus_Returns404_WhenCarIsDeleted()
+    {
+        var managerToken = await CreateManagerAndGetTokenAsync("mgr_status_deleted");
+        SetAuthToken(managerToken);
+        var car = await CreateCarAsync("1HGCM82633A004352");
+        await Client.DeleteAsync($"/api/cars/{car.Id}");
+
+        var response = await Client.PatchAsJsonAsync($"/api/cars/{car.Id}/status",
+            new ChangeCarStatusDto(CarStatus.UnderMaintenance));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task RestoreCar_Returns200_AndCarIsVisibleAgain()
+    {
+        var managerToken = await CreateManagerAndGetTokenAsync("mgr_restore");
+        SetAuthToken(managerToken);
+        var car = await CreateCarAsync("1HGCM82633A004352");
+        await Client.DeleteAsync($"/api/cars/{car.Id}");
+
+        var response = await Client.PostAsync($"/api/cars/{car.Id}/restore", null);
+        ClearAuthToken();
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<CarDto>();
+        body.Should().BeEquivalentTo(car);
+
+        var byId = await Client.GetAsync($"/api/cars/{car.Id}");
+        byId.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var list = await (await Client.GetAsync("/api/cars")).Content.ReadFromJsonAsync<PagedResult<CarDto>>();
+        list!.Items.Should().ContainSingle(c => c.Id == car.Id);
+    }
+
+    [Fact]
+    public async Task RestoreCar_Returns409_WhenCarIsNotDeleted()
+    {
+        var managerToken = await CreateManagerAndGetTokenAsync("mgr_restore_active");
+        SetAuthToken(managerToken);
+        var car = await CreateCarAsync("1HGCM82633A004352");
+
+        var response = await Client.PostAsync($"/api/cars/{car.Id}/restore", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task RestoreCar_Returns404_WhenCarDoesNotExist()
+    {
+        var managerToken = await CreateManagerAndGetTokenAsync("mgr_restore_404");
+        SetAuthToken(managerToken);
+
+        var response = await Client.PostAsync($"/api/cars/{Guid.NewGuid()}/restore", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task RestoreCar_Returns403_WhenUserIsClient()
+    {
+        var clientToken = await RegisterAndGetTokenAsync("client_restore");
+        SetAuthToken(clientToken);
+
+        var response = await Client.PostAsync($"/api/cars/{Guid.NewGuid()}/restore", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task RestoreCar_Returns401_WhenNotAuthenticated()
+    {
+        var response = await Client.PostAsync($"/api/cars/{Guid.NewGuid()}/restore", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+
     private static CreateCarDto ValidCreateCarDto(
         string vin,
         CarCategory category = CarCategory.Economy,
         decimal pricePerDay  = 80m)
         => new(vin, "Toyota", "Camry", 2022, category, pricePerDay, 10_000);
+
+    private async Task<CarDto> CreateCarAsync(string vin)
+    {
+        var response = await Client.PostAsJsonAsync("/api/cars", ValidCreateCarDto(vin));
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<CarDto>())!;
+    }
 }

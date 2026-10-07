@@ -135,6 +135,71 @@ public class CarTests
         act.Should().Throw<InvalidOperationException>();
     }
 
+    [Fact]
+    public void Car_ShouldNotBeDeleted_WhenCreated()
+    {
+        Car car = CreateCar();
+
+        car.IsDeleted.Should().BeFalse();
+        car.DeletedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public void Car_ShouldBeMarkedDeleted_WhenSoftDeleted()
+    {
+        Car car = CreateCar();
+        var deletedAt = new DateTime(2026, 1, 15, 10, 0, 0, DateTimeKind.Utc);
+
+        car.SoftDelete(deletedAt);
+
+        car.IsDeleted.Should().BeTrue();
+        car.DeletedAt.Should().Be(deletedAt);
+    }
+
+    [Fact]
+    public void Car_ShouldThrow_WhenSoftDeletingAlreadyDeletedCar()
+    {
+        Car car = CreateCar();
+        car.SoftDelete(DateTime.UtcNow);
+
+        Action act = () => car.SoftDelete(DateTime.UtcNow);
+
+        act.Should().Throw<CarAlreadyDeletedException>();
+    }
+
+    [Fact]
+    public void Car_ShouldClearDeletedAt_WhenRestored()
+    {
+        Car car = CreateCar();
+        car.SoftDelete(DateTime.UtcNow);
+
+        car.Restore();
+
+        car.IsDeleted.Should().BeFalse();
+        car.DeletedAt.Should().BeNull();
+    }
+
+    [Fact]
+    public void Car_ShouldThrow_WhenRestoringNotDeletedCar()
+    {
+        Car car = CreateCar();
+
+        Action act = () => car.Restore();
+
+        act.Should().Throw<CarNotDeletedException>();
+    }
+
+    [Fact]
+    public void Car_ShouldThrow_WhenRentCalledOnDeletedCar()
+    {
+        Car car = CreateCar();
+        car.SoftDelete(DateTime.UtcNow);
+
+        Action act = () => car.Rent();
+
+        act.Should().Throw<CarNotAvailableException>();
+    }
+
     private static Car CreateCar(string? vin = null, CarCategory category = CarCategory.Economy)
     {
         return new Car(Guid.NewGuid(), vin ?? ValidVin, "Toyota", "Camry", 2020, category, 50m, 10_000);
