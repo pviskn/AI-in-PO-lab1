@@ -1,5 +1,6 @@
 using CarRental.Domain.Entities;
 using CarRental.Domain.Enums;
+using CarRental.Domain.Exceptions;
 using FluentAssertions;
 using Xunit;
 
@@ -147,6 +148,77 @@ public class RentalRequestTests
         request.Should().NotBeNull();
         request.StartDate.Should().Be(date);
         request.EndDate.Should().Be(date);
+    }
+
+    [Fact]
+    public void Cancel_ShouldSetCancelledStatus_WhenOwnerCancelsPendingRequest()
+    {
+        RentalRequest request = CreateRequest();
+
+        request.Cancel(request.UserId);
+
+        request.Status.Should().Be(RentalRequestStatus.Cancelled);
+    }
+
+    [Fact]
+    public void Cancel_ShouldThrowNotOwned_WhenUserIsNotOwner()
+    {
+        RentalRequest request = CreateRequest();
+
+        Action act = () => request.Cancel(Guid.NewGuid());
+
+        act.Should().Throw<RentalRequestNotOwnedException>();
+        request.Status.Should().Be(RentalRequestStatus.Pending);
+    }
+
+    [Fact]
+    public void Cancel_ShouldThrowNotCancellable_WhenRequestIsApproved()
+    {
+        RentalRequest request = CreateRequest();
+        request.Approve();
+
+        Action act = () => request.Cancel(request.UserId);
+
+        act.Should().Throw<RentalRequestNotCancellableException>();
+        request.Status.Should().Be(RentalRequestStatus.Approved);
+    }
+
+    [Fact]
+    public void Cancel_ShouldThrowNotCancellable_WhenRequestIsRejected()
+    {
+        RentalRequest request = CreateRequest();
+        request.Reject("отказ");
+
+        Action act = () => request.Cancel(request.UserId);
+
+        act.Should().Throw<RentalRequestNotCancellableException>();
+    }
+
+    [Fact]
+    public void Cancel_ShouldThrowNotCancellable_WhenRequestIsAlreadyCancelled()
+    {
+        RentalRequest request = CreateRequest();
+        request.Cancel(request.UserId);
+
+        Action act = () => request.Cancel(request.UserId);
+
+        act.Should().Throw<RentalRequestNotCancellableException>();
+    }
+
+    [Fact]
+    public void ApproveRejectComplete_ShouldThrow_WhenRequestIsCancelled()
+    {
+        RentalRequest request = CreateRequest();
+        request.Cancel(request.UserId);
+
+        Action approve = () => request.Approve();
+        Action reject = () => request.Reject("причина");
+        Action complete = () => request.Complete();
+
+        approve.Should().Throw<InvalidOperationException>();
+        reject.Should().Throw<InvalidOperationException>();
+        complete.Should().Throw<InvalidOperationException>();
+        request.Status.Should().Be(RentalRequestStatus.Cancelled);
     }
 
     private static RentalRequest CreateRequest(DateOnly? start = null, DateOnly? end = null)

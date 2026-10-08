@@ -9,4 +9,6 @@ public enum RentalRequestStatus
     Rejected,
 
     Completed,
+
+    Cancelled,
 }

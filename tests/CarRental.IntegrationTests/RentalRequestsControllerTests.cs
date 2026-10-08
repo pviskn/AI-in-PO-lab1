@@ -211,6 +211,93 @@ public class RentalRequestsControllerTests : TestBase
     }
 
 
+    [Fact]
+    public async Task CancelRequest_Returns204AndPersistsCancelledStatus_WhenOwnerCancelsPendingRequest()
+    {
+        var (requestId, clientToken, _) = await CreatePendingRequestWithClientAsync(
+            "mgr_cancel_ok", "client_cancel_ok", "3VWFE21C04M000001");
+
+        SetAuthToken(clientToken);
+        var response = await Client.PostAsync($"/api/rental-requests/{requestId}/cancel", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var requests = await (await Client.GetAsync("/api/rental-requests")).Content
+            .ReadFromJsonAsync<PagedResult<RentalRequestDto>>();
+        requests!.Items.Should().ContainSingle(r => r.Id == requestId)
+            .Which.Status.Should().Be(RentalRequestStatus.Cancelled);
+    }
+
+    [Fact]
+    public async Task CancelRequest_Returns400_WhenRequestBelongsToAnotherClient()
+    {
+        var (requestId, ownerToken, _) = await CreatePendingRequestWithClientAsync(
+            "mgr_cancel_owner", "client_cancel_owner", "1G1ZT53806F109149");
+
+        var otherClientToken = await RegisterAndGetTokenAsync("client_cancel_other");
+        SetAuthToken(otherClientToken);
+        var response = await Client.PostAsync($"/api/rental-requests/{requestId}/cancel", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        SetAuthToken(ownerToken);
+        var requests = await (await Client.GetAsync("/api/rental-requests")).Content
+            .ReadFromJsonAsync<PagedResult<RentalRequestDto>>();
+        requests!.Items.Should().ContainSingle(r => r.Id == requestId)
+            .Which.Status.Should().Be(RentalRequestStatus.Pending);
+    }
+
+    [Fact]
+    public async Task CancelRequest_Returns400_WhenRequestIsNotPending()
+    {
+        var (requestId, clientToken, managerToken) = await CreatePendingRequestWithClientAsync(
+            "mgr_cancel_approved", "client_cancel_approved", "1FTFW1ET5EFC31160");
+        SetAuthToken(managerToken);
+        await Client.PostAsJsonAsync($"/api/rental-requests/{requestId}/approve", new { });
+
+        SetAuthToken(clientToken);
+        var response = await Client.PostAsync($"/api/rental-requests/{requestId}/cancel", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CancelRequest_Returns404_WhenRequestDoesNotExist()
+    {
+        var clientToken = await RegisterAndGetTokenAsync("client_cancel_missing");
+        SetAuthToken(clientToken);
+
+        var response = await Client.PostAsync($"/api/rental-requests/{Guid.NewGuid()}/cancel", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task ApproveRejectComplete_Return400_WhenRequestIsCancelled()
+    {
+        var (requestId, clientToken, managerToken) = await CreatePendingRequestWithClientAsync(
+            "mgr_cancelled_ops", "client_cancelled_ops", "1HGBH41JXMN109186");
+        SetAuthToken(clientToken);
+        await Client.PostAsync($"/api/rental-requests/{requestId}/cancel", null);
+
+        SetAuthToken(managerToken);
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var approve = await Client.PostAsJsonAsync($"/api/rental-requests/{requestId}/approve", new { });
+        var reject = await Client.PostAsJsonAsync(
+            $"/api/rental-requests/{requestId}/reject", new RejectRentalRequestDto("reason"));
+        var complete = await Client.PostAsJsonAsync(
+            $"/api/rental-requests/{requestId}/complete", new CompleteRentalDto(today.AddDays(4), 0m));
+
+        approve.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        reject.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        complete.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var requests = await (await Client.GetAsync("/api/rental-requests")).Content
+            .ReadFromJsonAsync<PagedResult<RentalRequestDto>>();
+        requests!.Items.Should().ContainSingle(r => r.Id == requestId)
+            .Which.Status.Should().Be(RentalRequestStatus.Cancelled);
+    }
+
+
     private static CreateCarDto ValidCreateCarDto(
         string vin,
         CarCategory category = CarCategory.Economy,
@@ -218,6 +305,15 @@ public class RentalRequestsControllerTests : TestBase
         => new(vin, "Toyota", "Camry", 2022, category, pricePerDay, 10_000);
 
     private async Task<(Guid requestId, string managerToken)> CreatePendingRequestAsync(
+        string managerUsername, string clientUsername, string vin)
+    {
+        var (requestId, _, managerToken) = await CreatePendingRequestWithClientAsync(
+            managerUsername, clientUsername, vin);
+
+        return (requestId, managerToken);
+    }
+
+    private async Task<(Guid requestId, string clientToken, string managerToken)> CreatePendingRequestWithClientAsync(
         string managerUsername, string clientUsername, string vin)
     {
         var managerToken = await CreateManagerAndGetTokenAsync(managerUsername);
@@ -234,7 +330,7 @@ public class RentalRequestsControllerTests : TestBase
             .Content.ReadFromJsonAsync<RentalRequestDto>();
         ClearAuthToken();
 
-        return (request!.Id, managerToken);
+        return (request!.Id, clientToken, managerToken);
     }
 
     private async Task<(Guid requestId, string managerToken)> CreateApprovedRequestAsync(

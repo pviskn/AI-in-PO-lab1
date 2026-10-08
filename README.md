@@ -63,6 +63,7 @@ Domain ← Application ← Infrastructure ← Api
 ```
 PENDING → APPROVED → COMPLETED
        ↘ REJECTED
+       ↘ CANCELLED (отмена клиентом-автором заявки)
 ```
 
 ---
@@ -85,6 +86,7 @@ PENDING → APPROVED → COMPLETED
 | POST   | /api/rental-requests/{id}/approve  | MANAGER, ADMIN |
 | POST   | /api/rental-requests/{id}/reject   | MANAGER, ADMIN |
 | POST   | /api/rental-requests/{id}/complete | MANAGER, ADMIN |
+| POST   | /api/rental-requests/{id}/cancel   | CLIENT (только автор заявки) |
 
 ### Пользователи
 | Метод  | URL                       | Роль  |

@@ -1,4 +1,5 @@
 using CarRental.Domain.Enums;
+using CarRental.Domain.Exceptions;
 
 namespace CarRental.Domain.Entities;
 
@@ -77,5 +78,16 @@ public class RentalRequest
             throw new InvalidOperationException("завершить можно только заявку approved");
 
         Status = RentalRequestStatus.Completed;
+    }
+
+    public void Cancel(Guid userId)
+    {
+        if (UserId != userId)
+            throw new RentalRequestNotOwnedException(Id, userId);
+
+        if (Status != RentalRequestStatus.Pending)
+            throw new RentalRequestNotCancellableException(Id, Status);
+
+        Status = RentalRequestStatus.Cancelled;
     }
 }

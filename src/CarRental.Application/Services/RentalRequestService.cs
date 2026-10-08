@@ -162,4 +162,16 @@ public class RentalRequestService : IRentalRequestService
 
         return contract.ToDto();
     }
+
+    public async Task CancelRequestAsync(
+        Guid requestId, Guid clientId, CancellationToken cancellationToken = default)
+    {
+        RentalRequest? request = await _requestRepo.GetByIdWithDetailsAsync(requestId, cancellationToken);
+        if (request == null)
+            throw new KeyNotFoundException("Заявка не найдена.");
+
+        request.Cancel(clientId);
+        _requestRepo.Update(request);
+        await _uow.SaveChangesAsync(cancellationToken);
+    }
 }

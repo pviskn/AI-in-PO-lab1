@@ -21,4 +21,6 @@ public interface IRentalRequestService
     Task RejectRequestAsync(Guid requestId, string reason, CancellationToken cancellationToken = default);
 
     Task<RentalContractDto> CompleteRentalAsync(Guid requestId, CompleteRentalDto dto, CancellationToken cancellationToken = default);
+
+    Task CancelRequestAsync(Guid requestId, Guid clientId, CancellationToken cancellationToken = default);
 }

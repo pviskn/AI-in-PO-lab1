@@ -37,6 +37,8 @@ public class ExceptionHandlingMiddleware
                     DuplicateUsernameException => (HttpStatusCode.Conflict, ex.Message),
                     UserNotEligibleException => (HttpStatusCode.Forbidden, ex.Message),
                     InsufficientDriverExperienceException => (HttpStatusCode.BadRequest, ex.Message),
+                    RentalRequestNotOwnedException => (HttpStatusCode.BadRequest, ex.Message),
+                    RentalRequestNotCancellableException => (HttpStatusCode.BadRequest, ex.Message),
                     _ => (HttpStatusCode.InternalServerError, "внутренн€€ ошибка сервера"),
                 };
 
