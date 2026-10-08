@@ -149,6 +149,82 @@ public class RentalRequestTests
         request.EndDate.Should().Be(date);
     }
 
+    [Fact]
+    public void Cancel_ShouldSetCancelledStatus_WhenRequestIsPendingAndClientIsOwner()
+    {
+        RentalRequest request = CreateRequest();
+
+        request.Cancel(request.UserId);
+
+        request.Status.Should().Be(RentalRequestStatus.Cancelled);
+    }
+
+    [Fact]
+    public void Cancel_ShouldThrow_WhenClientIsNotOwner()
+    {
+        RentalRequest request = CreateRequest();
+
+        Action act = () => request.Cancel(Guid.NewGuid());
+
+        act.Should().Throw<InvalidOperationException>();
+        request.Status.Should().Be(RentalRequestStatus.Pending);
+    }
+
+    [Fact]
+    public void Cancel_ShouldThrow_WhenRequestIsApproved()
+    {
+        RentalRequest request = CreateRequest();
+        request.Approve();
+
+        Action act = () => request.Cancel(request.UserId);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void Cancel_ShouldThrow_WhenRequestIsAlreadyCancelled()
+    {
+        RentalRequest request = CreateRequest();
+        request.Cancel(request.UserId);
+
+        Action act = () => request.Cancel(request.UserId);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void Approve_ShouldThrow_WhenRequestIsCancelled()
+    {
+        RentalRequest request = CreateRequest();
+        request.Cancel(request.UserId);
+
+        Action act = () => request.Approve();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void Reject_ShouldThrow_WhenRequestIsCancelled()
+    {
+        RentalRequest request = CreateRequest();
+        request.Cancel(request.UserId);
+
+        Action act = () => request.Reject("причина");
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void Complete_ShouldThrow_WhenRequestIsCancelled()
+    {
+        RentalRequest request = CreateRequest();
+        request.Cancel(request.UserId);
+
+        Action act = () => request.Complete();
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
     private static RentalRequest CreateRequest(DateOnly? start = null, DateOnly? end = null)
     {
         DateOnly startDate = start ?? Today.AddDays(1);

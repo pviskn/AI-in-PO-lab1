@@ -63,6 +63,7 @@ public class RentalRequestRepository : IRentalRequestRepository
             r =>
             r.CarId == carId &&
             r.Status != RentalRequestStatus.Rejected &&
+            r.Status != RentalRequestStatus.Cancelled &&
             r.StartDate < endDate &&
             r.EndDate > startDate &&
             (excludeRequestId == null || r.Id != excludeRequestId),

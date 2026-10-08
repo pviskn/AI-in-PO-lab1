@@ -78,4 +78,15 @@ public class RentalRequest
 
         Status = RentalRequestStatus.Completed;
     }
+
+    public void Cancel(Guid clientId)
+    {
+        if (clientId != UserId)
+            throw new InvalidOperationException("отменить заявку может только создавший её клиент");
+
+        if (Status != RentalRequestStatus.Pending)
+            throw new InvalidOperationException("отменить можно только заявку pending");
+
+        Status = RentalRequestStatus.Cancelled;
+    }
 }

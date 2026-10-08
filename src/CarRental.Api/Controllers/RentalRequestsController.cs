@@ -153,4 +153,29 @@ public class RentalRequestsController : ControllerBase
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    [HttpPost("{id:guid}/cancel")]
+    [Authorize(Roles = "Client")]
+    [ProducesResponseType(typeof(RentalRequestDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> CancelRequest(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            Guid userId = _currentUserService.UserId ?? throw new UnauthorizedAccessException("пользователь не авторизован");
+            RentalRequestDto result = await _rentalRequestService.CancelRequestAsync(id, userId, cancellationToken);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

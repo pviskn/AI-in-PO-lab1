@@ -162,4 +162,24 @@ public class RentalRequestService : IRentalRequestService
 
         return contract.ToDto();
     }
+
+    public async Task<RentalRequestDto> CancelRequestAsync(
+        Guid requestId, Guid clientId, CancellationToken cancellationToken = default)
+    {
+        RentalRequest? request = await _requestRepo.GetByIdWithDetailsAsync(requestId, cancellationToken);
+        if (request == null)
+            throw new KeyNotFoundException("Заявка не найдена.");
+
+        if (request.UserId != clientId)
+            throw new InvalidOperationException("Нельзя отменить заявку другого клиента.");
+
+        if (request.Status != RentalRequestStatus.Pending)
+            throw new InvalidOperationException("Заявка не находится в статусе ожидания.");
+
+        request.Cancel(clientId);
+        _requestRepo.Update(request);
+        await _uow.SaveChangesAsync(cancellationToken);
+
+        return request.ToDto();
+    }
 }

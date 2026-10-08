@@ -38,7 +38,7 @@ Domain ← Application ← Infrastructure ← Api
 
 | Роль    | Возможности |
 |---------|-------------|
-| CLIENT  | Просматривать каталог, создавать заявки на аренду |
+| CLIENT  | Просматривать каталог, создавать заявки на аренду, отменять свои заявки в статусе PENDING |
 | MANAGER | Всё CLIENT + добавлять авто, одобрять/отклонять/завершать заявки |
 | ADMIN   | Всё MANAGER + управлять пользователями и ролями |
 
@@ -63,6 +63,7 @@ Domain ← Application ← Infrastructure ← Api
 ```
 PENDING → APPROVED → COMPLETED
        ↘ REJECTED
+       ↘ CANCELLED (отмена клиентом-владельцем)
 ```
 
 ---
@@ -85,6 +86,7 @@ PENDING → APPROVED → COMPLETED
 | POST   | /api/rental-requests/{id}/approve  | MANAGER, ADMIN |
 | POST   | /api/rental-requests/{id}/reject   | MANAGER, ADMIN |
 | POST   | /api/rental-requests/{id}/complete | MANAGER, ADMIN |
+| POST   | /api/rental-requests/{id}/cancel   | CLIENT (владелец заявки) |
 
 ### Пользователи
 | Метод  | URL                       | Роль  |
