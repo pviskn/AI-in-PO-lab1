@@ -63,11 +63,18 @@ When soft-deletion is finished run relevant tests
 
 ### 1.1. Прогон 1 (ветка `baseline-attempt-1`)
 
-
 ### 1.2. Прогон 2 (ветка `baseline-attempt-2`)
 
-
 ### 1.3. Прогон 3 (ветка `baseline-attempt-3`)
+
+| Прогон | Ветка | Файл лога | Сессия |
+| --- | --- | --- | --- |
+| Baseline 1 | `baseline-attempt-1` | [baseline-1_1.md](https://github.com/pviskn/AI-in-PO-lab1/blob/baseline-attempt-1/baseline-1_1.md) | [сессия](https://claude.ai/code/session_01YYzts6ngBpXVbPtQiRuLWJ) |
+| Baseline 2 | `baseline-attempt-2` | [baseline-2_1.md](https://github.com/pviskn/AI-in-PO-lab1/blob/baseline-attempt-2/baseline-2_1.md) | [сессия](https://claude.ai/code/session_01Xjwy7fpYLMGkLm1sjNJNGc) |
+| Baseline 3 | `baseline-attempt-3` | [baseline-3.md](https://github.com/pviskn/AI-in-PO-lab1/blob/baseline-attempt-3/baseline-3.md) | [сессия](https://claude.ai/code/session_01HyENJ1U5MRm19ksQo29erf) |
+| Задача 1 с инструкциями | `with-instructions-run-1` | [with-instructions-run-1.md](https://github.com/pviskn/AI-in-PO-lab1/blob/with-instructions-run-1/with-instructions-run-1.md) | [сессия](https://claude.ai/code/session_01ASVboaC46Fs3ZMb4HYq3wB) |
+| Задача 2 без инструкций | `task2-baseline` | [task2-baseline.md](https://github.com/pviskn/AI-in-PO-lab1/blob/task2-baseline/task2-baseline.md) | [сессия](https://claude.ai/code/session_018hwVSrxr1NqbaH8GvY6TTw) |
+| Задача 2 с инструкциями | `task2-with` | [task2-with.md](https://github.com/pviskn/AI-in-PO-lab1/blob/task2-with/task2-with.md) | [сессия](https://claude.ai/code/session_0153TZvdKF2786ieV2HLq5eb) |
 
 
 
