@@ -184,12 +184,12 @@ Requirements:
 - inspect the existing code and implement the feature consistently with the project
 When soft-deletion is finished run relevant tests
 ```
-- Краткое описание того, что агент сделал: 
+- **Краткое описание того, что агент сделал:**
+| Прогон | Ветка | Файл лога | Сессия |
 | --- | --- | --- | --- |
 | Задача 1 с инструкциями | `with-instructions-run-1` | [with-instructions-run-1.md](https://github.com/pviskn/AI-in-PO-lab1/blob/with-instructions-run-1/with-instructions-run-1.md) | [сессия](https://claude.ai/code/session_01ASVboaC46Fs3ZMb4HYq3wB) |
-- Отличия от baseline-прогонов
 
-**Отличия от baseline-прогонов**
+- **Отличия от baseline-прогонов**
 
 Промпт и модель были те же, менялась только стартовая ветка: с `AGENTS.md`, `CLAUDE.md` и skill. По результату `check.js` исчезли все три типа нарушений, которые повторялись в baseline:
 
