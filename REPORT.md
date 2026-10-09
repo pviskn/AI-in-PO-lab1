@@ -168,7 +168,6 @@ When soft-deletion is finished run relevant tests
 ## Шаг 4. Результаты с контекстом (AGENTS.md + skill)
 
 ### 4.1. Прогон с правилами (ветка `with-instructions-run-1`)
-<!-- Заполняет: Человек 1 
 - Промпт, который был дан агенту (с учетом новых инструкций)
 ```
 Soft deletion for cars
@@ -268,9 +267,44 @@ When soft-deletion is finished run relevant tests
 Описание второй задачи (структурно похожей, но другой из списка примеров).-->
 
 ### 5.2. Результаты на второй задаче
-<!-- Заполняет: Человек 1 
 - Промпт для второй задачи
-- Что сделал агент-->
+
+```
+# Customer cancellation of rental requests
+## **Requirements:**
+
+- add a new POST /api/rental-requests/{id}/cancel endpoint for an authenticated client to cancel their own rental request
+
+- add Cancelled to the existing RentalRequestStatus enum
+
+- only the client who created the rental request can cancel it
+
+- a rental request can be cancelled only when its current status is Pending
+
+- cancelling another client's request must be handled as an invalid business operation
+
+- cancelling a request that is not Pending must be handled as an invalid business operation
+
+- if the request does not exist, return HTTP 404
+
+- after successful cancellation, persist the new status so that subsequent requests return Cancelled
+
+- existing approve, reject and complete operations must not process a cancelled request
+
+- keep the existing public API behavior unchanged for other requests and operations
+
+- add/update tests for successful cancellation, wrong owner, invalid status and nonexistent request
+
+- update the README endpoints table with the new endpoint
+
+- check the existing code and follow the project's style
+
+**When cancellation is finished run relevant tests**
+```
+
+- Что сделал агент:
+| Задача 2 без инструкций | `task2-baseline` | [task2-baseline.md](https://github.com/pviskn/AI-in-PO-lab1/blob/task2-baseline/task2-baseline.md) | [сессия](https://claude.ai/code/session_018hwVSrxr1NqbaH8GvY6TTw) |
+| Задача 2 с инструкциями | `task2-with` | [task2-with.md](https://github.com/pviskn/AI-in-PO-lab1/blob/task2-with/task2-with.md) | [сессия](https://claude.ai/code/session_0153TZvdKF2786ieV2HLq5eb) |
 
 #### Количество нарушений конвенций на второй задаче
 <table>
