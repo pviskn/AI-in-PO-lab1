@@ -185,9 +185,7 @@ Requirements:
 When soft-deletion is finished run relevant tests
 ```
 - **Краткое описание того, что агент сделал:**
-| Прогон | Ветка | Файл лога | Сессия |
-| --- | --- | --- | --- |
-| Задача 1 с инструкциями | `with-instructions-run-1` | [with-instructions-run-1.md](https://github.com/pviskn/AI-in-PO-lab1/blob/with-instructions-run-1/with-instructions-run-1.md) | [сессия](https://claude.ai/code/session_01ASVboaC46Fs3ZMb4HYq3wB) |
+[baseline-1_1.md](https://github.com/pviskn/AI-in-PO-lab1/blob/baseline-attempt-1/baseline-1_1.md) | [сессия](https://claude.ai/code/session_01YYzts6ngBpXVbPtQiRuLWJ)
 
 - **Отличия от baseline-прогонов**
 
