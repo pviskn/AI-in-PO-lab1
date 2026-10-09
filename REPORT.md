@@ -185,7 +185,7 @@ Requirements:
 When soft-deletion is finished run relevant tests
 ```
 - **Краткое описание того, что агент сделал:**
-[baseline-1_1.md](https://github.com/pviskn/AI-in-PO-lab1/blob/baseline-attempt-1/baseline-1_1.md) | [сессия](https://claude.ai/code/session_01YYzts6ngBpXVbPtQiRuLWJ)
+[baseline-1_1.md](https://github.com/pviskn/AI-in-PO-lab1/blob/baseline-attempt-1/baseline-1_1.md)
 
 - **Отличия от baseline-прогонов**
 
