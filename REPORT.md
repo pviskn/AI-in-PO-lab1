@@ -167,11 +167,45 @@ When soft-deletion is finished run relevant tests
 
 ## Шаг 4. Результаты с контекстом (AGENTS.md + skill)
 
-### 4.1. Прогон с правилами (ветка `with-agents-md`)
+### 4.1. Прогон с правилами (ветка `with-instructions-run-1`)
 <!-- Заполняет: Человек 1 
 - Промпт, который был дан агенту (с учетом новых инструкций)
-- Краткое описание того, что агент сделал
-- Отличия от baseline-прогонов -->
+```
+Soft deletion for cars
+Requirements:
+- a car must not be physically deleted from the database
+- add a nullable deletion timestamp (DeletedAt) or similar soft-delete flag to the car model
+- soft-deleted cars shouldn't show up in the regular car list
+- a normal request for a soft-deleted car by id must behave as if the car does not exist
+- add an endpoint for Manager/Admin to soft-delete a car
+- add an endpoint for Manager/Admin to bring a soft-deleted car back
+- deleting an already deleted car and restoring a car that is not deleted must be handled as invalid operations
+- keep the existing public API behavior unchanged for cars that are not deleted
+- add/update tests for the new behavior
+- inspect the existing code and implement the feature consistently with the project
+When soft-deletion is finished run relevant tests
+```
+- Краткое описание того, что агент сделал: 
+| --- | --- | --- | --- |
+| Задача 1 с инструкциями | `with-instructions-run-1` | [with-instructions-run-1.md](https://github.com/pviskn/AI-in-PO-lab1/blob/with-instructions-run-1/with-instructions-run-1.md) | [сессия](https://claude.ai/code/session_01ASVboaC46Fs3ZMb4HYq3wB) |
+- Отличия от baseline-прогонов
+
+**Отличия от baseline-прогонов**
+
+Промпт и модель были те же, менялась только стартовая ветка: с `AGENTS.md`, `CLAUDE.md` и skill. По результату `check.js` исчезли все три типа нарушений, которые повторялись в baseline:
+
+| Что | Baseline (3 прогона) | С инструкциями |
+| --- | --- | --- |
+| `try/catch` в контроллере | 4 в каждом прогоне — агент копировал стиль существующего `ChangeCarStatus` | 0 — действия контроллера только вызывают сервис и возвращают результат, ошибки обрабатывает `ExceptionHandlingMiddleware` |
+| Бизнес-ошибки | `throw new InvalidOperationException` (3 в каждом прогоне) | собственные исключения `CarAlreadyDeletedException` и `CarNotDeletedException` — наследники `DomainException` |
+| Маппинг ошибок | через `catch` в контроллере | новые исключения добавлены в `ExceptionHandlingMiddleware` |
+| README | новые эндпоинты не описаны в 2 из 3 прогонов | эндпоинты добавлены в таблицу |
+| **Нарушений** | **7, 8, 8 (среднее 7,7)** | **0** |
+
+Что не изменилось: в обоих случаях агент правильно соблюдал слои, использовал DTO, `Async` + `CancellationToken` и `SaveChangesAsync`, писал unit- и интеграционные тесты, и все тесты проходили. Эти правила агент выводил из соседнего кода и без инструкций.
+
+Побочный эффект: недопустимые операции (повторное удаление, восстановление неудалённого авто) теперь возвращают 409 Conflict вместо 400, как было в baseline и в существующем коде. Инструкции не задавали HTTP-код, агент выбрал его сам.
+
 
 #### Таблица количества нарушений конвенций по результатам check-скрипта до и после добавления контекста
 
