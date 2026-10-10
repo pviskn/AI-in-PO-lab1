@@ -135,35 +135,37 @@ When soft-deletion is finished run relevant tests
 
 ### 3.3. Промпт для агента
 
-Мы выбрали 2 задачи, которые затрагивают разные части проекта - заявки и автомобили, чтобы проверить, сможет ли агент применять одни и те же инструкции при выполнении разных задач, и написали для этого промпты
-
 **Задача 1 - Soft deletion for cars**
 
 Нужно добавить мягкое удаление автомобилей, автомобиль не должен удаляться из базы данных полностью, вместо этого нужно добавить поле DeletedAt. Удалённые автомобили не должны отображаться в обычном списке. Также необходимо добавить эндпоинты для удаления и восстановления автомобилей, обработать ошибки и написать тесты.
 
-**Задача 2 - Customer cancellation of rental requests**
+```
+# Soft deletion for cars
 
-Нужно добавить возможность отмены заявки на аренду автомобиля.
+## **Requirements:**
 
-Основные требования:
+- a car must not be physically deleted from the database
 
-- добавить эндпоинт POST /api/rental-requests/{id}/cancel
+- add a nullable deletion timestamp (DeletedAt) or similar soft-delete flag to the car model
 
-- добавить новый статус Cancelled
+- soft-deleted cars shouldn't show up in the regular car list
 
-- разрешить отмену только владельцу заявки
+- a normal request for a soft-deleted car by id must behave as if the car does not exist
 
-- разрешить отмену только для заявок со статусом Pending
+- add an endpoint for Manager/Admin to soft-delete a car
 
-- возвращать ошибку при попытке отменить чужую заявку или заявку с другим статусом
+- add an endpoint for Manager/Admin to bring a soft-deleted car back
 
-- возвращать HTTP 404, если заявка не найдена
+- deleting an already deleted car and restoring a car that is not deleted must be handled as invalid operations
 
-- сохранять новый статус в базе данных
+- keep the existing public API behavior unchanged for cars that are not deleted
 
-- не разрешать одобрять, отклонять или завершать отменённые заявки
+- add/update tests for the new behavior
 
-- добавить тесты и обновить README
+- inspect the existing code and implement the feature consistently with the project
+
+**When soft-deletion is finished run relevant tests**
+```
 
 ## Шаг 4. Результаты с контекстом (AGENTS.md + skill)
 
@@ -261,8 +263,32 @@ When soft-deletion is finished run relevant tests
 ## Шаг 5. Проверка генерализуемости
 
 ### 5.1. Вторая задача
-<!-- Заполняет: Человек 1 
-Описание второй задачи (структурно похожей, но другой из списка примеров).-->
+
+Мы выбрали 2 задачи, которые затрагивают разные части проекта - заявки и автомобили, чтобы проверить, сможет ли агент применять одни и те же инструкции при выполнении разных задач, и написали для этого промпты
+
+**Customer cancellation of rental requests**
+
+Нужно добавить возможность отмены заявки на аренду автомобиля.
+
+Основные требования:
+
+- добавить эндпоинт POST /api/rental-requests/{id}/cancel
+
+- добавить новый статус Cancelled
+
+- разрешить отмену только владельцу заявки
+
+- разрешить отмену только для заявок со статусом Pending
+
+- возвращать ошибку при попытке отменить чужую заявку или заявку с другим статусом
+
+- возвращать HTTP 404, если заявка не найдена
+
+- сохранять новый статус в базе данных
+
+- не разрешать одобрять, отклонять или завершать отменённые заявки
+
+- добавить тесты и обновить README
 
 ### 5.2. Результаты на второй задаче
 - Промпт для второй задачи
